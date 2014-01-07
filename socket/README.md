@@ -1,5 +1,5 @@
-sandbox
-=======
+Build server : gcc server.c -o server
+Build client : gcc client.c -o client
 
-Learn Github
-ABD
+Start server : ./server
+Start client : ./clien
