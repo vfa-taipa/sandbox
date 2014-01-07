@@ -14,7 +14,7 @@
 
 #include <arpa/inet.h>
 
-#define PORT "3490" // the port client will be connecting to 
+#define PORT "8081" // the port client will be connecting to 
 
 #define MAXDATASIZE 100 // max number of bytes we can get at once 
 
@@ -28,13 +28,54 @@ void *get_in_addr(struct sockaddr *sa)
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+int do_write(int fd)
+{
+    char send_buf[1024];
+    fgets(send_buf, 1024, stdin);
+    if (strcmp(send_buf , "quit\n") == 0) {
+        exit(0);
+    } else {
+        send(fd, send_buf, 1024, 0);
+        printf("Send : %s\n", send_buf);
+    }
+    return 0;
+}
+
+int do_read(int fd)
+{
+    char buf[1024];
+    int i;
+    int result;
+    printf("Client : do_read\n");
+    while (1) {
+        result = recv(fd, buf, sizeof(buf), 0);
+        printf("client: received '%s'\n",buf);
+        if (result <= 0)
+            break;
+    }
+
+    if (result == 0) {
+        return 1;
+    } else if (result < 0) {
+        if (errno == EAGAIN)
+            return 0;
+        return -1;
+    }
+
+    printf("client: received '%s'\n",buf);
+
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     int sockfd, numbytes;  
+    struct timeval tv;
     char buf[MAXDATASIZE];
     struct addrinfo hints, *servinfo, *p;
     int rv;
     char s[INET6_ADDRSTRLEN];
+    fd_set readset, writeset;
 
     if (argc != 2) {
         fprintf(stderr,"usage: client hostname\n");
@@ -72,8 +113,7 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
-            s, sizeof s);
+    inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
     printf("client: connecting to %s\n", s);
 
     freeaddrinfo(servinfo); // all done with this structure
@@ -85,7 +125,40 @@ int main(int argc, char *argv[])
 
     buf[numbytes] = '\0';
 
-    printf("client: received '%s'\n",buf);
+
+    FD_ZERO(&readset);
+    FD_ZERO(&writeset);
+
+    tv.tv_sec = 2;
+    tv.tv_usec = 500000;
+    
+    while (1) {
+        FD_ZERO(&readset);
+        FD_ZERO(&writeset);
+
+        FD_SET(sockfd, &readset);
+        FD_SET(0, &readset);
+        FD_SET(sockfd, &writeset);
+        if (select(sockfd+1, &readset, NULL, NULL, &tv) < 0) {
+            perror("select");
+            return 0;
+        }
+
+        printf("Read DONE\n");
+
+        for(int i = 0; i <= sockfd; i++ ){
+            if (FD_ISSET(i, &readset)) {
+                if (i == 0)
+                    do_write(sockfd);
+                else
+                    do_read(i);
+            } else if (FD_ISSET(i, &writeset)){
+                //Do_Write
+                printf("Client : Do Write");
+                do_write(i);
+            }
+        }
+    }
 
     close(sockfd);
 
