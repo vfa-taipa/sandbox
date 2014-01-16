@@ -66,6 +66,7 @@ class ChatServer
     @sockets.each do |client|
       if client != @server && client != omit_sock then
         client.puts(str)
+        puts("Send to : #{client.peeraddr[2]}\n")
       end
     end
     # Print all broadcasts to the server's STDOUT
