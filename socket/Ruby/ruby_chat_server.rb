@@ -4,14 +4,31 @@ require "thread"
 class ChatServer
   def initialize(port)
     @sockets = Array.new
+    @lastUpdate = Array.new
 
     @server = TCPServer.new("", port)
     puts("Ruby chat server started on port #{port}\n")
     @sockets.push(@server)
+    @lastUpdate.push(Time.now)
 
     th = Thread.new do
       while true
         puts("Client Number : #{@sockets.count}")
+        @sockets.each do |client|
+          if client != @server then
+            n = Time.now
+            s = n - @lastUpdate[@sockets.index(client)]
+            if (s > 10) then
+              puts("Remove Client : #{client.peeraddr[2]}\n")
+              #client.close
+              #@lastUpdate.delete_at(@sockets.index(client))
+              #@sockets.delete(client)
+            elsif (s > 2)
+              client.puts("PING")
+            end
+            #client.puts("PING")
+          end
+        end
         sleep(3)  
       end
     end
@@ -38,10 +55,18 @@ class ChatServer
               str = "Client left #{sock.peeraddr[2]}"
               broadcast(str, sock)
               sock.close
+              @lastUpdate.delete_at(@sockets.index(sock))
               @sockets.delete(sock)
             else
-              str = "[#{sock.peeraddr[2]}]: #{sock.gets()}"
-              broadcast(str, sock)
+              str = sock.gets()
+              str1 = "[#{sock.peeraddr[2]}]: #{str}"
+              @lastUpdate[@sockets.index(sock)] = Time.now
+
+              if (str.match(/^PONG/) == nil) then
+                broadcast(str1, sock)
+              else
+                #puts("PONG from : #{sock.peeraddr[2]}")
+              end
             end
           end
         end
@@ -53,6 +78,7 @@ class ChatServer
 
     # add newsockets to the list of connected sockets
     @sockets.push(newsocket)
+    @lastUpdate.push(Time.now)
     
     # Inform the socket that it has connected, then inform all sockets of the new connection
     newsocket.puts("You're connected to the Ruby Chat Server! Woohoo")

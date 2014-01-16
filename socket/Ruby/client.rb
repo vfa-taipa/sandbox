@@ -31,6 +31,10 @@ class ChatClient
               sock.close
               @sockets.delete(sock)
             else
+              str = sock.gets()
+              if (str.match(/^PING/) != nil) then
+                @server.puts("PONG")
+              end
               puts(sock.gets())
             end
           end
