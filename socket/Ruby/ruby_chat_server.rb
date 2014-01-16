@@ -5,6 +5,7 @@ class ChatServer
   def initialize(port)
     @sockets = Array.new
     @lastUpdate = Array.new
+    mutex = Mutex.new
 
     @server = TCPServer.new("", port)
     puts("Ruby chat server started on port #{port}\n")
@@ -13,23 +14,25 @@ class ChatServer
 
     th = Thread.new do
       while true
-        puts("Client Number : #{@sockets.count}")
+        #puts("Client Number : #{@sockets.count}")
         @sockets.each do |client|
           if client != @server then
             n = Time.now
             s = n - @lastUpdate[@sockets.index(client)]
             if (s > 10) then
               puts("Remove Client : #{client.peeraddr[2]}\n")
-              #client.close
-              #@lastUpdate.delete_at(@sockets.index(client))
-              #@sockets.delete(client)
+              mutex.synchronize do
+                client.close
+                @lastUpdate.delete_at(@sockets.index(client))
+                @sockets.delete(client)
+              end
             elsif (s > 2)
               client.puts("PING")
             end
             #client.puts("PING")
           end
         end
-        sleep(3)  
+        sleep(1)
       end
     end
 
