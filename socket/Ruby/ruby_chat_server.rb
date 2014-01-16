@@ -1,4 +1,5 @@
 require "socket"
+require "thread"
 
 class ChatServer
   def initialize(port)
@@ -7,7 +8,17 @@ class ChatServer
     @server = TCPServer.new("", port)
     puts("Ruby chat server started on port #{port}\n")
     @sockets.push(@server)
+
+    th = Thread.new do
+      while true
+        puts("Client Number : #{@sockets.count}")
+        sleep(3)  
+      end
+    end
+
     run()
+
+    th.join
   end
 
   def run
