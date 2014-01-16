@@ -44,6 +44,7 @@ class ChatServer
   def run
     while true
 
+      begin
       # The select method will take as an argument the array of sockets, and return a socket that has    
       # data to be read
       ioarray = select(@sockets, nil, nil, nil)
@@ -73,6 +74,9 @@ class ChatServer
             end
           end
         end
+      rescue
+        puts("ERROR !")
+      end
     end
   end
 
