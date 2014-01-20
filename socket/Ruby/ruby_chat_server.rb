@@ -33,8 +33,8 @@ class ChatServer
               puts("Remove Client : #{client.peeraddr[2]}\n")
               mutex.synchronize do
                 client.close
-                @lastUpdate.delete_at(@sockets.index(iclient))
-                @groupids.delete_at(@sockets.index(iclient))
+                @lastUpdate.delete_at(@sockets.index(client))
+                @groupids.delete_at(@sockets.index(client))
                 @sockets.delete(client)
               end
             elsif (s > 2)
@@ -92,8 +92,8 @@ class ChatServer
             end
           end
         end
-      rescue
-        puts("ERROR !")
+      rescue Exception => e
+        puts "Caught exception : #{e}"
       end
     end
   end
@@ -148,7 +148,7 @@ class ChatServer
   end
 end
 
-myChatServer = ChatServer.new(2700)
+myChatServer = ChatServer.new(8080)
 
 # message format : {"cmd":1, "roomid":"","userid":"","content":""}
 # Update groupid : {"cmd":2, "roomid":"123","userid":"", "content":""}
