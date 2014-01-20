@@ -1,5 +1,6 @@
 require "socket"
 require "thread"
+require "json"
 
 class ChatServer
   def initialize(port)
@@ -33,6 +34,7 @@ class ChatServer
               mutex.synchronize do
                 client.close
                 @lastUpdate.delete_at(@sockets.index(iclient))
+                @groupids.delete_at(@sockets.index(iclient))
                 @sockets.delete(client)
               end
             elsif (s > 2)
@@ -70,6 +72,7 @@ class ChatServer
               broadcast(str, sock)
               sock.close
               @lastUpdate.delete_at(@sockets.index(sock))
+              @groupids.delete_at(@sockets.index(sock))
               @sockets.delete(sock)
             else
               str = sock.gets()
@@ -77,11 +80,11 @@ class ChatServer
 
               if (str.match(/^PONG/) == nil) then
                 cmd = JSON.parse(str)
-                if (cmd == 2) # Update group id
+                if (cmd["cmd"] == 2) # Update group id
                   @groupids[@sockets.index(sock)] = cmd["roomid"]
                 else
                   str1 = "[#{sock.peeraddr[2]}]: #{str}"
-                  broadcast(str1, sock, cmd["roomid"])
+                  broadcast_to_room(str1, sock, cmd["roomid"])
                 end
               else
                 #puts("PONG from : #{sock.peeraddr[2]}")
@@ -131,12 +134,12 @@ class ChatServer
   #======================================
   # Broadcast to a group
   #======================================
-  def broadcast(str, omit_sock, groupid)
+  def broadcast_to_room(str, omit_sock, groupid)
     # Send the string argument to every socket that is not the server,
     # and not the socket the broadcast originated from.
     @sockets.each do |client|
       group = @groupids[@sockets.index(client)]
-      if client != @server && client != omit_sock && group = groupid then
+      if client != @server && client != omit_sock && group == groupid then
         client.puts(str)
         puts("Send to : #{client.peeraddr[2]}\n")
       end
