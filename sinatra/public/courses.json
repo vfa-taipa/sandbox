@@ -1,0 +1,50 @@
+{
+    "Monday": [
+        {
+            "title": "Test Driven Development",
+            "speaker": "Jason Shapiro",
+            "time": "9:00 AM",
+            "room": "Matisse",
+            "details": "Explore the topics and tools related to Test Driven Development."
+        },
+        {
+            "title": "Java Tools",
+            "speaker": "Jim White",
+            "time": "9:00 AM",
+            "room": "Rothko",
+            "details": "Discuss the latest set of tools used to help ease software development."
+        }
+    ],
+    "Tuesday": [
+        {
+            "title": "MongoDB",
+            "speaker": "DavinMickelson",
+            "time": "1: 00PM",
+            "room": "Picasso",
+            "details": "Learnabout\"NoSQL\"databases."
+        },
+        {
+            "title": "DebuggingwithXcode",
+            "speaker": "JasonShapiro",
+            "time": "1: 00PM",
+            "room": "VanGogh",
+            "details": "ExploredifferentpatternsfordebuggingyouriOSapps."
+        }
+    ],
+    "Wednesday": [
+        {
+            "title": "Scrum Master",
+            "speaker": "Davin Mickelson",
+            "time": "1:00 PM",
+            "room": "Matisse",
+            "details": "Learn the roles and responsibilities of a Scrum Master"
+        },
+        {
+            "title": "Design Patterns",
+            "speaker": "Jim White",
+            "time": "1:00 PM",
+            "room": "Rothko",
+            "details": "Apply best practices and sound architectures to software design."
+        }
+    ]
+}
