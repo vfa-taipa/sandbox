@@ -10,6 +10,10 @@ class ChatClient
     @roomid = gets
     @roomid = @roomid.chomp
 
+  puts("Please input user id : ")
+    @userid = gets
+    @userid = @userid.chomp
+
     @server = TCPSocket.new(address, port)
 
     @sockets.push(@server)
@@ -17,7 +21,7 @@ class ChatClient
 
     # Send room ID to server
     # Update groupid : {"cmd":2, "roomid":"123","userid":"", "content":""}
-    cmd = {"cmd" => 2, "roomid" => @roomid, "userid" => "", "content" => ""}
+    cmd = {"cmd" => 2, "roomid" => @roomid, "userid" => @userid, "content" => ""}
     @server.puts(JSON.generate(cmd))
     
     run()
@@ -33,7 +37,7 @@ class ChatClient
         # the socket that returned data will be the first element in this array
         for sock in ioarray[0]
           if sock == $stdin then
-            cmd = {"cmd" => 3, "roomid" => @roomid, "userid" => "", "content" => sock.gets().chomp}
+            cmd = {"cmd" => 3, "roomid" => @roomid, "userid" => @userid, "content" => sock.gets().chomp}
             #@server.puts(sock.gets())
             @server.puts(JSON.generate(cmd))
           else
