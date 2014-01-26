@@ -9,14 +9,16 @@ class SimpleChatServer < EM::Connection
   DM_REGEXP           = /^@([a-zA-Z0-9]+)\s*:?\s*(.+)/.freeze
 
   attr_reader :username
+  attr_reader :roomid
 
 
-  #
+  # ============================================================
   # EventMachine handlers
-  #
+  # ============================================================
 
   def post_init
     @username = nil
+    @roomid = nil
 
     puts "A client has connected..."
     ask_username
@@ -28,17 +30,19 @@ class SimpleChatServer < EM::Connection
   end
 
   def receive_data(data)
-    if entered_username?
-      handle_chat_message(data.strip)
-    else
+    if !entered_username?
       handle_username(data.strip)
+    elsif !entered_room?
+      handle_room(data.strip)
+    else
+      handle_chat_message(data.strip)
     end
   end
 
 
-  #
+  # ============================================================
   # Username handling
-  #
+  # ============================================================
 
   def entered_username?
     !@username.nil? && !@username.empty?
@@ -55,6 +59,7 @@ class SimpleChatServer < EM::Connection
       puts "#{@username} has joined"
 
       self.send_line("[info] Ohai, #{@username}")
+      self.ask_userroom
     end
   end # handle_username(input)
 
@@ -62,10 +67,31 @@ class SimpleChatServer < EM::Connection
     self.send_line("[info] Enter your username:")
   end # ask_username
 
+  # ============================================================
+  # Username Room
+  # ============================================================
 
-  #
+  def entered_room?
+    !@roomid.nil? && !@roomid.empty?
+  end # entered_room?
+
+  def handle_room(input)
+    if input.empty?
+      send_line("Blank RoomID are not allowed. Try again.")
+      ask_userroom
+    else
+      @roomid = input
+    end
+  end # handle_username(input)
+
+  def ask_userroom
+    self.send_line("[info] Enter your Room ID:")
+  end # ask_username
+
+
+  # ============================================================
   # Message handling
-  #
+  # ============================================================
 
   def handle_chat_message(msg)
     if command?(msg)
@@ -74,7 +100,8 @@ class SimpleChatServer < EM::Connection
       if direct_message?(msg)
         self.handle_direct_message(msg)
       else
-        self.announce(msg, "#{@username}:")
+        #self.announce(msg, "#{@username}:")
+        self.announce_to_group(msg, "#{@username}:", @roomid)
       end
     end
   end # handle_chat_message(msg)
@@ -99,9 +126,9 @@ class SimpleChatServer < EM::Connection
   end # parse_direct_message(input)
 
 
-  #
+  # ============================================================
   # Commands handling
-  #
+  # ============================================================
 
   def command?(input)
     input =~ /(exit|status)$/i
@@ -115,13 +142,18 @@ class SimpleChatServer < EM::Connection
   end # handle_command(cmd)
 
 
-  #
+  # ============================================================
   # Helpers
-  #
+  # ============================================================
 
   def announce(msg = nil, prefix = "[chat server]")
     @@connected_clients.each { |c| c.send_line("#{prefix} #{msg}") } unless msg.empty?
   end # announce(msg)
+
+  def announce_to_group(msg = nil, prefix = "[chat server]", roomid = nil)
+    connection = @@connected_clients.select { |c| c.roomid == roomid }
+    connection.each { |c| c.send_line("#{prefix} #{msg}") } unless msg.empty?
+  end
 
   def number_of_connected_clients
     @@connected_clients.size
