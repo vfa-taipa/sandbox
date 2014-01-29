@@ -11,6 +11,7 @@ class SimpleChatServer < EM::Connection
 
   attr_reader :username
   attr_reader :roomid
+  attr_reader :lastupdate
 
 
   # ============================================================
@@ -21,31 +22,29 @@ class SimpleChatServer < EM::Connection
     @username = nil
     @roomid = nil
     @buf = ''
+    @lastupdate = Time.now
+
     @@connected_clients.push(self)
+
     puts "A client has connected..."
   end
 
   def unbind
     @@connected_clients.delete(self)
     puts "[info] #{@username} has left"
+
+    #Call API here for user lost connect or close connection
   end
 
   def receive_data(data)
+    @lastupdate = Time.now
     @buf << data
     if @buf =~ /^.+?\r?\n/
-      self.handle_command(@buf)
+      if @buf.match(/^PONG/) == nil then
+        self.handle_command(@buf)
+      end
       @buf = ''
     end
-
-
-
-    # if !entered_username?
-    #   handle_username(data.strip)
-    # elsif !entered_room?
-    #   handle_room(data.strip)
-    # else
-    #   handle_chat_message(data.strip)
-    # end
   end
 
   # ============================================================
@@ -88,12 +87,32 @@ class SimpleChatServer < EM::Connection
     connection = connection.reject { |c| self == c }
     connection.each { |c| c.send_line("#{prefix} #{msg}") } unless msg.empty?
   end
+
+  def self.checkTimeOut
+    connection = @@connected_clients.select {|c| Time.now - c.lastupdate > 10}
+    connection.each { |c|
+      puts("Lastupdate > 10 : #{c.username}")
+      c.close_connection
+    }
+    connection = @@connected_clients.select {|c| Time.now - c.lastupdate > 5}
+    connection.each { |c|
+      puts("#{Time.now} - Lastupdate > 5 : #{c.username}")
+      c.send_line("PING")
+    }
+  end
 end
 
-EventMachine.run do
+EM.kqueue #MacOS
+#EventMachine.epoll #Linux
+
+EM.run do
   # hit Control + C to stop
   Signal.trap("INT")  { EventMachine.stop }
   Signal.trap("TERM") { EventMachine.stop }
 
-  EventMachine.start_server("0.0.0.0", 8080, SimpleChatServer)
+  EM.start_server("0.0.0.0", 8080, SimpleChatServer)
+
+  EventMachine.add_periodic_timer(4) {
+    SimpleChatServer.checkTimeOut
+  }
 end
