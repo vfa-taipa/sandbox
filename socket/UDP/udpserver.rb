@@ -12,3 +12,5 @@ s.send("1", 0, host, port)
   puts "We will respond with #{response}"
   s.send(response, 0, host, port)
 end
+
+#s.send("1",0,'localhost',1234)
