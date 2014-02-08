@@ -39,27 +39,16 @@ class UDPHandler < EM::Connection
     puts("Received #{data}")
     puts("#{Socket.unpack_sockaddr_in(self.get_peername)}")
 
-    findClient = @@Clients.select { |c| c.ip == ip && c.port == port }
-
-    if (findClient.size == 0) then
-      newClient = Client.new(ip, port, nil, nil)
-      @@Clients.push(newClient)
-
-      puts "A client has connected..."
-    end
-
     puts("Client count : #{@@Clients.size}")
-
-    #Send to all
-    @@Clients.each { |c| 
-      send_datagram("Server : #{data}\n", c.ip, c.port)
-    }
+    self.handle_command(data)
   end
 
   # ============================================================
   # Command handling
-  # Init Connection  : {"cmd":1, "roomid":"123","userid":"123","content":""}
-  # Send msg to room : {"cmd":2, "roomid":"123","userid":"", "content":"PHAM ANH TAI"}
+  # Init Connection     : {"cmd":1, "roomid":"123","userid":"123","content":""}
+  # Send msg to room    : {"cmd":2, "roomid":"123","userid":"", "content":"PHAM ANH TAI"}
+  # Leave room          : {"cmd":3, "roomid":"123","userid":"", "content":""}
+  # Delete room         : {"cmd":4, "roomid":"123","userid":"", "content":""}
   # ============================================================
   def handle_command(data)
     puts(data)
@@ -74,12 +63,9 @@ class UDPHandler < EM::Connection
         
         @@Clients.push(newUser)
 
-        puts("cmd 1 \n")
+        puts "A client has connected..."
       elsif (cmd["cmd"] == 2) then
         puts("cmd 2 \n")
-        self.setUserInfo(cmd)
-      elsif (cmd["cmd"] == 3) then
-        puts("cmd 3 \n")
         findClient = @@Clients.select { |c| c.userid == cmd["userid"]}
         if (findClient.size == 1) then
           self.send_to_group(cmd["content"], "", cmd["roomid"], cmd["userid"])
