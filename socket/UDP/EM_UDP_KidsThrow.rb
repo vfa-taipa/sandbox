@@ -52,7 +52,6 @@ class UDPHandler < EM::Connection
   # {"process":1, "group_id":"123","userid":"123","body":""}
   # ============================================================
   def handle_command(data)
-    puts(data)
     begin
       msg = JSON.parse(data)
 
@@ -67,15 +66,16 @@ class UDPHandler < EM::Connection
         puts "A client has connected..."
         send_data("INIT OK")
       elsif (msg["process"] == 99) then
-        
+        puts("CMd 99")
       else #Send to group
         findClient = @@Clients.select { |c| c.userid == msg["userid"]}
         if (findClient.size == 1) then
           self.send_to_group(data, msg["group_id"], msg["userid"])
         end
       end
-    rescue Exception => e
-      puts("JSON Error !!!")
+    rescue Exception => ex
+      puts ex.message
+      puts ex.backtrace.join("\n")
     end
   end
 
@@ -87,12 +87,14 @@ class UDPHandler < EM::Connection
     connection = @@Clients.select { |c| c.roomid == roomid }
     connection = connection.reject { |c| userid == c.userid }
     connection.each { |c| 
-      send_datagram("#{msg}\n", c.ip, c.port) } unless msg.empty?
+      send_datagram("#{msg}\n", c.ip, c.port) 
       puts("Send to : #{c.ip}:#{c.port}\n")
+    } unless msg.empty?
+      
   end
 
 end
-#/EM.kqueue #MacOS
+# EM.kqueue #MacOS
 EM.epoll #Linux
 
 EM.run do
