@@ -20,7 +20,7 @@ class UDPHandler < EM::Connection
   # ============================================================
   def receive_data(data)
     data.chomp!
-    @@count++
+    @@count = @@count + 1
     puts("Count : #{@@count} - Data : #{data}")
   end
 end
