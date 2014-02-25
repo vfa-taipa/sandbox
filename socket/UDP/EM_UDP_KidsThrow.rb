@@ -35,11 +35,9 @@ class UDPHandler < EM::Connection
     puts("=======================================")
     data.chomp!
     port, ip = Socket.unpack_sockaddr_in(self.get_peername)
+    
+    puts("#{Time.now} From #{Socket.unpack_sockaddr_in(self.get_peername)} : #{data}")
 
-    puts("Received #{data}")
-    puts("#{Socket.unpack_sockaddr_in(self.get_peername)}")
-
-    puts("Client count : #{@@Clients.size}")
     self.handle_command(data)
   end
 
@@ -55,7 +53,8 @@ class UDPHandler < EM::Connection
     begin
       msg = JSON.parse(data)
 
-      if (msg["process"] == 1) then #Init connection
+      if (msg["process"] == "1") then 
+        #Init connection, Add new user to group
         @@Clients.delete_if { |c| c.userid == msg["userid"]}
 
         port, ip = Socket.unpack_sockaddr_in(self.get_peername)
@@ -64,9 +63,11 @@ class UDPHandler < EM::Connection
         @@Clients.push(newUser)
 
         puts "A client has connected..."
-        send_data("INIT OK")
-      elsif (msg["process"] == 99) then
+        send_data(JSON.generate({:ip => ip, :port => port}))
+      elsif (msg["process"] == "99") then
+        # Remove user from group
         puts("CMd 99")
+        @@Clients.delete_if { |c| c.userid == msg["userid"]}
       else #Send to group
         findClient = @@Clients.select { |c| c.userid == msg["userid"]}
         if (findClient.size == 1) then
@@ -85,7 +86,7 @@ class UDPHandler < EM::Connection
   # ============================================================
   def send_to_group(msg = nil, roomid = nil, userid = nil)
     connection = @@Clients.select { |c| c.roomid == roomid }
-    connection = connection.reject { |c| userid == c.userid }
+    # connection = connection.reject { |c| userid == c.userid }
     connection.each { |c| 
       send_datagram("#{msg}\n", c.ip, c.port) 
       puts("Send to : #{c.ip}:#{c.port}\n")
@@ -94,8 +95,8 @@ class UDPHandler < EM::Connection
   end
 
 end
-# EM.kqueue #MacOS
-EM.epoll #Linux
+EM.kqueue #MacOS
+# EM.epoll #Linux
 
 EM.run do
   # hit Control + C to stop
