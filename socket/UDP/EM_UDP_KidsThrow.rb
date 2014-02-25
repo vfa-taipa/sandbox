@@ -61,8 +61,6 @@ class UDPHandler < EM::Connection
         newUser = Client.new(ip, port, msg["userid"], msg["group_id"])
         
         @@Clients.push(newUser)
-
-        puts "A client has connected..."
         send_data(JSON.generate({:ip => ip, :port => port}))
       elsif (msg["process"] == "99") then
         # Remove user from group
