@@ -1,7 +1,7 @@
 require 'rubygems'        # if you use RubyGems
 require 'daemons'
 
-Daemons.run('myserver.rb')
+Daemons.run('EM_UDP_KidsThrow.rb')
 
 # ruby myserver_control.rb start
 # ruby myserver_control.rb restart
