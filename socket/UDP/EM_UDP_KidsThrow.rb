@@ -8,6 +8,7 @@
 require 'rubygems' # or use Bundler.setup
 require 'eventmachine'
 require 'json'
+require 'logger'
 
 class Client
   attr_reader :userid
@@ -27,17 +28,16 @@ end
 class UDPHandler < EM::Connection
 
   @@Clients = Array.new
+  @@logger = Logger.new('Kidsthrow.log', 'daily')
 
   # ============================================================
   # EventMachine handlers
   # ============================================================
   def receive_data(data)
-    puts("=======================================")
     data.chomp!
     port, ip = Socket.unpack_sockaddr_in(self.get_peername)
-    
-    puts("#{Time.now} From #{Socket.unpack_sockaddr_in(self.get_peername)} : #{data}")
 
+    @@logger.debug("From #{Socket.unpack_sockaddr_in(self.get_peername)} : #{data}")
     self.handle_command(data)
   end
 
@@ -66,7 +66,6 @@ class UDPHandler < EM::Connection
         send_data(JSON.generate({:ip => ip, :port => port}))
       elsif (msg["process"] == "99") then
         # Remove user from group
-        puts("CMd 99")
         @@Clients.delete_if { |c| c.userid == msg["userid"]}
       else #Send to group
         findClient = @@Clients.select { |c| c.userid == msg["userid"]}
@@ -88,15 +87,15 @@ class UDPHandler < EM::Connection
     connection = @@Clients.select { |c| c.roomid == roomid }
     # connection = connection.reject { |c| userid == c.userid }
     connection.each { |c| 
-      send_datagram("#{msg}\n", c.ip, c.port) 
-      puts("Send to : #{c.ip}:#{c.port}\n")
+      send_datagram("#{msg}\n", c.ip, c.port)
+      @@logger.debug("Send #{c.ip}:#{c.port} : #{msg}")
     } unless msg.empty?
       
   end
 
 end
-EM.kqueue #MacOS
-# EM.epoll #Linux
+#EM.kqueue #MacOS
+EM.epoll #Linux
 
 EM.run do
   # hit Control + C to stop
