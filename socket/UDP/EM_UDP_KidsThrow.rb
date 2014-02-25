@@ -37,7 +37,7 @@ class UDPHandler < EM::Connection
     data.chomp!
     port, ip = Socket.unpack_sockaddr_in(self.get_peername)
 
-    @@logger.debug("From #{Socket.unpack_sockaddr_in(self.get_peername)} : #{data}")
+    @@logger.debug("From [#{ip}:#{port}] : #{data}")
     self.handle_command(data)
   end
 
@@ -86,7 +86,7 @@ class UDPHandler < EM::Connection
     # connection = connection.reject { |c| userid == c.userid }
     connection.each { |c| 
       send_datagram("#{msg}\n", c.ip, c.port)
-      @@logger.debug("Send #{c.ip}:#{c.port} : #{msg}")
+      @@logger.debug("Send [#{c.ip}:#{c.port}] #{msg}")
     } unless msg.empty?
       
   end
